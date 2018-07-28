@@ -1,0 +1,128 @@
+---
+title: "Speed Dating"
+date: 2018-07-28
+author: "Mainara Cavalcanti de Farias"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+  html_notebook:
+    toc: yes
+    toc_float: yes
+---
+
+## Introdução
+
+Nessa análise, utilizaremos dados que descrevem 5000 encontros relâmpagos *(speed dating)* de 4 minutos envolvendo 310 jovens americanos. Os participantes tinham vários encontros de 4 minutos por noite. Após cada um, preenchia fichas avaliando aqueles com quem se encontraram. Cada linha nos dados representa um desses encontros. </br>
+O significado de cada variável pode ser visualizado [aqui](https://github.com/nazareno/ciencia-de-dados-1/tree/master/5-regressao/speed-dating), de forma geral, iremos utilizar variáveis em que expressam a opinião que uma pessoa teve sobre a outra durante o encontro.
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(here)
+library(plotly)
+library(GGally)
+library(broom, quietly = T)
+```
+
+
+```{r}
+speed_dating = read_csv(here("data/speed-dating.csv"))
+
+```
+
+### Quanto o interesse em comum e a sinceridade irão influenciam o like? Há diferença entre homens e mulheres?
+
+Primeiro, vamos filtrar os dados para responder essa pergunta.
+
+```{r}
+woman_data <- speed_dating %>%
+  filter(gender == 0) %>%
+  select(like,shar,sinc)
+
+man_data <- speed_dating %>%
+  filter(gender == 1) %>%
+  select(like,shar,sinc)
+
+```
+
+Para observar o quanto as variáveis estão relacionadas utilizando a análise de correlação.
+#### Mulheres
+```{r}
+
+woman_data = woman_data %>% 
+  na.omit(woman_data)
+
+woman_data %>% 
+  ggpairs()
+```
+
+#### Homens
+```{r}
+man_data = man_data %>% 
+  na.omit(man_data)
+man_data %>%
+  ggpairs()
+
+
+```
+Vemos que não há uma correlação muito forte entre as variáveis.</br>
+O modelo de regressão será definido da seguinte forma:
+#### Mulheres
+```{r}
+model_shar_sinc_1 <- lm(like ~ shar + sinc, data = woman_data)
+tidy(model_shar_sinc_1, conf.int = TRUE)
+```
+#### Homens
+```{r}
+model_shar_sinc_2 <- lm(like ~ shar + sinc, data = man_data)
+tidy(model_shar_sinc_2, conf.int = TRUE)
+```
+
+
+Utilizamos *like* como sendo a variável dependente e *shar* e *sinc* as variáveis independentes.</br>
+As tabelas acima informam os resultados dos modelos. De acordo com a coluna **estimate**, que mostra o quanto cada uma das variáveis independentes influenciam o like, vemos que o interesse em comum (0.47 para mulheres e 0.42) tem peso maior na variável *like*, comparada com a sinceridade (0.34 para mulheres e 0.30 para homens). </br>
+O p-valor das duas variáveis é próximo de zero para os dois models, logo, podemos dizer que elas representam bem nossos modelos e a relação com a variável *like*.</br>
+Agora que sabemos que as variáveis independentes realmente influenciam no like, queremos saber o quanto o valor dos dados de like são explicados pelas duas variáveis.
+
+#### Mulheres
+
+
+#### Homens
+```{r}
+glance(model_shar_sinc_2, conf.int = TRUE)
+```
+
+O valor de R quadrado nos informa o que queremos saber. Como o valor obtido no modelo para mulheres foi 0.55, concluímos que essas influenciam em 55% no like. E no modelo para homens 45%.
+
+Agora vamos visualizar os modelos:
+
+#### Mulheres
+```{r}
+woman_data %>% 
+    add_predictions(model = model_shar_sinc_1) %>% 
+    ggplot(aes(x = shar, 
+               y = like,
+               group = sinc,
+               color = sinc))+ 
+    geom_point(alpha = 0.4) + 
+    geom_line(aes(y = pred, color = sinc))  
+
+
+```
+
+#### Homens
+
+```{r}
+man_data %>% 
+    add_predictions(model = model_shar_sinc_2) %>% 
+    ggplot(aes(x = shar, 
+               y = like,
+               group = sinc,
+               color = sinc))+ 
+    geom_point(alpha = 0.4) + 
+    geom_line(aes(y = pred, color = sinc))  
+
+```
+
+Não sei explicar o porque de existir mais de uma reta nas visualizações, porém, podemos observar que quanto maior o valor das variáveis independentes o *like* também é maior. Além disso, o interesse em comum e a sinceridade influência mais no *like* de mulheres do que de homens.

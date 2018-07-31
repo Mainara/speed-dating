@@ -23,6 +23,7 @@ library(here)
 library(plotly)
 library(GGally)
 library(broom, quietly = T)
+library(modelr)
 ```
 
 
@@ -31,7 +32,7 @@ speed_dating = read_csv(here("data/speed-dating.csv"))
 
 ```
 
-### Quanto o interesse em comum e a sinceridade irão influenciam o like? Há diferença entre homens e mulheres?
+### Quanto o interesse em comum e a sinceridade influenciam o like? Há diferença entre homens e mulheres?
 
 Primeiro, vamos filtrar os dados para responder essa pergunta.
 
@@ -47,7 +48,8 @@ man_data <- speed_dating %>%
 ```
 
 Para observar o quanto as variáveis estão relacionadas utilizando a análise de correlação.
-#### Mulheres
+
+####Mulheres
 ```{r}
 
 woman_data = woman_data %>% 
@@ -66,9 +68,11 @@ man_data %>%
 
 
 ```
+</br>
 Vemos que não há uma correlação muito forte entre as variáveis.</br>
 O modelo de regressão será definido da seguinte forma:
-#### Mulheres
+
+####Mulheres
 ```{r}
 model_shar_sinc_1 <- lm(like ~ shar + sinc, data = woman_data)
 tidy(model_shar_sinc_1, conf.int = TRUE)
@@ -81,48 +85,56 @@ tidy(model_shar_sinc_2, conf.int = TRUE)
 
 
 Utilizamos *like* como sendo a variável dependente e *shar* e *sinc* as variáveis independentes.</br>
-As tabelas acima informam os resultados dos modelos. De acordo com a coluna **estimate**, que mostra o quanto cada uma das variáveis independentes influenciam o like, vemos que o interesse em comum (0.47 para mulheres e 0.42) tem peso maior na variável *like*, comparada com a sinceridade (0.34 para mulheres e 0.30 para homens). </br>
+As tabelas acima informam os resultados dos modelos. De acordo com a coluna **estimate**, que mostra o quanto cada uma das variáveis independentes influenciam o *like*, vemos que o interesse em comum (0.47 para mulheres e 0.42 para homens) tem peso maior na variável *like*, comparada com a sinceridade (0.34 para mulheres e 0.30 para homens). </br>
 O p-valor das duas variáveis é próximo de zero para os dois models, logo, podemos dizer que elas representam bem nossos modelos e a relação com a variável *like*.</br>
-Agora que sabemos que as variáveis independentes realmente influenciam no like, queremos saber o quanto o valor dos dados de like são explicados pelas duas variáveis.
+Agora que sabemos que as variáveis independentes realmente influenciam no *like*, queremos saber o quanto o valor dos dados de like são explicados pelas duas variáveis.
 
 #### Mulheres
-
+```{r}
+glance(model_shar_sinc_1, conf.int = TRUE)
+```
 
 #### Homens
 ```{r}
 glance(model_shar_sinc_2, conf.int = TRUE)
 ```
 
-O valor de R quadrado nos informa o que queremos saber. Como o valor obtido no modelo para mulheres foi 0.55, concluímos que essas influenciam em 55% no like. E no modelo para homens 45%.
+O valor de R quadrado nos informa o que queremos saber. Como o valor obtido no modelo para mulheres foi 0.55, concluímos que essas influenciam em 55% no *like*. Já no modelo para homens 45%.
 
 Agora vamos visualizar os modelos:
 
 #### Mulheres
 ```{r}
-woman_data %>% 
-    add_predictions(model = model_shar_sinc_1) %>% 
-    ggplot(aes(x = shar, 
-               y = like,
-               group = sinc,
-               color = sinc))+ 
-    geom_point(alpha = 0.4) + 
-    geom_line(aes(y = pred, color = sinc))  
+para_plotar_modelo = woman_data %>% 
+  data_grid(shar = seq_range(shar, 3),
+            sinc = seq_range(sinc, 5)) %>% 
+  add_predictions(model_shar_sinc_1)
 
+glimpse(para_plotar_modelo)
+
+para_plotar_modelo %>% 
+  ggplot(aes(x = shar, y = pred)) + 
+  geom_line(aes(group = sinc, colour = sinc)) + 
+  facet_grid(. ~ sinc)
 
 ```
 
 #### Homens
 
 ```{r}
-man_data %>% 
-    add_predictions(model = model_shar_sinc_2) %>% 
-    ggplot(aes(x = shar, 
-               y = like,
-               group = sinc,
-               color = sinc))+ 
-    geom_point(alpha = 0.4) + 
-    geom_line(aes(y = pred, color = sinc))  
+para_plotar_modelo = man_data %>% 
+  data_grid(shar = seq_range(shar, 3),
+            sinc = seq_range(sinc, 5)) %>% 
+  add_predictions(model_shar_sinc_2)
+
+glimpse(para_plotar_modelo)
+
+para_plotar_modelo %>% 
+  ggplot(aes(x = shar, y = pred)) + 
+  geom_line(aes(group = sinc, colour = sinc)) + 
+  facet_grid(. ~ sinc)
 
 ```
 
-Não sei explicar o porque de existir mais de uma reta nas visualizações, porém, podemos observar que quanto maior o valor das variáveis independentes o *like* também é maior. Além disso, o interesse em comum e a sinceridade influência mais no *like* de mulheres do que de homens.
+Através da visualização dos modelos, verificamos que além do *like* crescer com valores maiores de *shar* e *sinc*, vemos que quando os dois valores são maiores juntos o *like* também é maior.</br>
+Além disso, verificamos que as duas variáveis independentes influênciam mais no modelo para mulheres, ou seja, as mulheres se importam mais com o interesse em comum e a sinceridade do que os homens, de acordo com esse experimento. Por fim, percebemos também que a variável que representa o interesse em comum tem mais influência que a sinceridade.

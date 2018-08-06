@@ -1,0 +1,80 @@
+---
+title: "Regressão Logística e match"
+date: 2018-08-05
+author: "Mainara Cavalcanti de Farias"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+  html_notebook:
+    toc: yes
+    toc_float: yes
+---
+
+## Introdução
+
+Para este relatório iremos utilizar os mesmo dados do [checkpoint anterior](https://github.com/Mainara/speed-dating/blob/master/reports/prob5-cp1.Rmd), porém, uma coluna chamada `dec` foi adicionada aos dados, ela informa se o participante 1 gostaria de se encontrar novamente com o participante 2, de acordo com o desenrolar do encontro que tiveram.
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(here)
+library(pscl)
+library(GGally)
+library(broom, quietly = T)
+library(modelr)
+```
+
+```{r}
+speed_dating2 = read_csv(here("data/speed-dating2.csv"))
+
+speed_dating2 <- speed_dating2 %>%
+  mutate(dec = case_when(.$dec == "yes" ~ 1, .$dec == "no" ~ 0))
+
+```
+
+
+### Dentre os fatores que você acha que podem ter efeito no match, quais fatores têm efeito significativo na chance de p1 decidir se encontrar novamente com p2? E como é esse efeito (positivo/negativo)?
+
+Primeiro, deve-se escolher as variáveis que podem influenciar no quanto p1 vai querer ver p2 novamente. Aqui, vamos utilizar as variáveis *intel*, *fun*, *attr* e *shar*, ou seja, o quanto p1 achou p2 inteligente, engraçado, atraente e que compartilha os mesmos interesses. </br>
+
+O modelo será construído levando em consideração as variáveis citadas acima:
+```{r}
+modelo <- glm(dec ~ attr + fun + intel + shar, 
+         data = speed_dating2,
+         family = "binomial")
+```
+
+Assim como foi feito no checkpoint anterior, iremos visualizar os valores estimados dos coeficientes de cada variável, porém, os valores dos coeficientes sem a exponenciação fazem pouco sentido na regressão logística, logo, iremos utilizar a exponenciação dos resultados
+
+```{r}
+tidy(modelo, conf.int = TRUE, exponentiate = TRUE)
+```
+
+Dentre as variáveis escolhidas, observamos, de acordo com o intervalo de confiança, que a variável *intel* tem uma pequena influência negativa na variável dependente, já as variáveis *attr*, *fun* e *shar* tem efeito positivo.
+
+```{r}
+pR2(modelo)
+```
+
+Aqui, diferente da regressão linear, não temos o valor do R² para explicar o quão explicativo é o modelo, porém, utilizaremos a medida **McFadden** para realizar esse papel, portanto, o modelo consegue explicar os matchs com o valor de 35%.
+
+### Que fatores nos dados têm mais efeito na chance de um participante querer se encontrar novamente com outro?
+
+Para responder essa pergunta, precisamos criar um novo modelo no qual desconsideramos a variável *intel* já que ela não é significativo para o modelo:
+
+```{r}
+model <- glm(dec ~ attr + fun + shar, 
+         data = speed_dating2,
+         family = "binomial")
+
+tidy(model, conf.int = TRUE, exponentiate = TRUE)
+```
+
+Levando em consideração os coeficientes das variáveis geradas pelo modelo acima, percebemos que dentre as variáveis que explicam a atração *(attr)*, interesse em comum *(shar)* e o quanto p1 achou p2 divertida *(fun)*, a atração é o que mais influencia na chance de p1 querer se encontrar novamente com p2.
+
+```{r}
+pR2(model)
+```
+
+Porém, ainda assim, não ocorreu mudança na medida *McFadden* continuando explicando apenas 35% dos dados.

@@ -36,7 +36,7 @@ speed_dating2 <- speed_dating2 %>%
 
 ### Dentre os fatores que você acha que podem ter efeito no match, quais fatores têm efeito significativo na chance de p1 decidir se encontrar novamente com p2? E como é esse efeito (positivo/negativo)?
 
-Primeiro, deve-se escolher as variáveis que podem influenciar no quanto p1 vai querer ver p2 novamente. Aqui, vamos utilizar as variáveis *intel*, *fun*, *attr* e *shar*, ou seja, o quanto p1 achou p2 inteligente, engraçado, atraente e que compartilha os mesmos interesses. </br>
+Primeiro, deve-se escolher as variáveis que podem influenciar no quanto p1 vai querer ver p2 novamente. Aqui, vamos utilizar as variáveis **intel**, **fun**, **attr** e **shar**, ou seja, o quanto p1 achou p2 inteligente, engraçado, atraente e que compartilha os mesmos interesses. </br>
 
 O modelo será construído levando em consideração as variáveis citadas acima:
 ```{r}
